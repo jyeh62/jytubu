@@ -20,7 +20,7 @@ async def video_details(video_id: str):
         response = await client.get(
             "https://www.googleapis.com/youtube/v3/videos",
             params={
-                "part": "snippet,contentDetails,statistics",
+                "part": "snippet,contentDetails,statistics,player",
                 "id": video_id
             },
             headers={
