@@ -10,7 +10,7 @@ auth_router = APIRouter()
 
 # 환경 변수로부터 설정 값 로드
 CLIENT_SECRETS_FILE = "config/client_secret.json"
-REDIRECT_URI = "http://localhost:8000/auth/callback"
+REDIRECT_URI = os.getenv("AUTH_REDIRECT_URL", "http://localhost:8000/auth/callback") # "http://localhost:8000/auth/callback"
 SECRET_KEY = os.getenv("SECRET_KEY", "default_secret_key")
 
 flow = Flow.from_client_secrets_file(
@@ -23,6 +23,7 @@ serializer = URLSafeSerializer(SECRET_KEY)
 
 @auth_router.get("/auth")
 def auth(request: Request):
+    print(f'auth: secret_key {SECRET_KEY}, redirect_url: {REDIRECT_URI}')
     credentials = load_credentials()
     if credentials and credentials.valid:
         return RedirectResponse(url="/subscriptions")
