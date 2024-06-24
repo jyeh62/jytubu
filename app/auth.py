@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request, status, Response
 from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
 from itsdangerous import URLSafeSerializer, BadSignature
 from google_auth_oauthlib.flow import Flow
 import os
@@ -9,6 +10,8 @@ from pydantic import BaseModel
 from app.utils.token import save_credentials, load_credentials
 
 auth_router = APIRouter()
+templates = Jinja2Templates(directory="templates")
+
 
 # 환경 변수로부터 설정 값 로드
 CLIENT_SECRETS_FILE = "config/client_secret.json"
@@ -58,6 +61,7 @@ def auth(request: Request):
 
 @auth_router.get("/auth/callback")
 def callback(request: Request):
+    print('call /auth/callback')
     state = request.query_params.get('state', '')
     try:
         stored_state = serializer.loads(request.session.pop('state', ''))
@@ -71,4 +75,12 @@ def callback(request: Request):
     credentials = flow.credentials
     save_credentials(credentials, filepath=credentials.token)
 
-    return {"login" : credentials.token}
+    #return {"login" : credentials.token}
+    print(f'/auth/callback success {credentials.token}')
+    print(f'myapp://login?token={credentials.token}')
+    auth_result = {
+        "url" : f'myapp://login?token={credentials.token}',
+        
+    }
+    return templates.TemplateResponse("redirect.html", context={"request": request, **auth_result})
+
