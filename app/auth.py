@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, status, Response
 from fastapi.responses import RedirectResponse, JSONResponse
 from itsdangerous import URLSafeSerializer, BadSignature
 from google_auth_oauthlib.flow import Flow
 import os
+from pydantic import BaseModel
+
 
 from app.utils.token import save_credentials, load_credentials
 
@@ -21,15 +23,33 @@ flow = Flow.from_client_secrets_file(
 
 serializer = URLSafeSerializer(SECRET_KEY)
 
+class UserInfo(BaseModel):
+    name: str
+    token: str
+
+@auth_router.get("/login")
+def login(token: str, name: str, response: Response):
+    userInfo = UserInfo(name=name, token=token)
+    print(f'request login: {UserInfo}')
+    credentials = load_credentials(filepath=token)
+    if credentials and credentials.valid:
+        return {"login" : credentials.token}
+    else:
+        auth_router.userInfo = userInfo
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+        return {"login" : "fail"}
+        # return RedirectResponse(url="/auth", status_code=status.HTTP_303_SEE_OTHER)
+
 @auth_router.get("/auth")
 def auth(request: Request):
     print(f'auth: secret_key {SECRET_KEY}, redirect_url: {REDIRECT_URI}')
-    credentials = load_credentials()
+    print(f'request login: {auth_router.userInfo.name}, {auth_router.userInfo.token}')
+    credentials = load_credentials(auth_router.userInfo.token)
     if credentials and credentials.valid:
         return RedirectResponse(url="/subscriptions")
     elif credentials and credentials.expired and credentials.refresh_token:
         credentials.refresh(httpx.AsyncClient())
-        save_credentials(credentials)
+        save_credentials(credentials, filepath=credentials.token)
         return RedirectResponse(url="/subscriptions")
     else:
         authorization_url, state = flow.authorization_url()
@@ -49,6 +69,6 @@ def callback(request: Request):
     
     flow.fetch_token(authorization_response=str(request.url))
     credentials = flow.credentials
-    save_credentials(credentials)
+    save_credentials(credentials, filepath=credentials.token)
 
-    return RedirectResponse(url="/subscriptions")
+    return {"login" : credentials.token}
