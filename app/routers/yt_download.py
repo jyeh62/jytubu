@@ -12,6 +12,6 @@ async def download(url: Optional[str] = Query(None, alias="url"),):
     print(random_uuid)
     options = {}
     with yt_dlp.YoutubeDL(options) as ydl:
-        ydl.download([url])
+        await ydl.download([url])
 
     return {"uuid": random_uuid}
