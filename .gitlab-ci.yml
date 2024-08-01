@@ -1,0 +1,25 @@
+stages:
+  - test
+  - deploy
+
+variables:
+  SERVER_IP: "193.122.99.81"
+  SERVER_USER: "ubuntu"
+  SERVER_DEPLOY_DIR: "/home/ubuntu/python/test"
+
+deploy:
+  stage: deploy
+  image: python:3.9
+  before_script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $SERVER_IP >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - scp -r ./* $SERVER_USER@$SERVER_IP:$SERVER_DEPLOY_DIR
+    - ssh $SERVER_USER@$SERVER_IP "cd $SERVER_DEPLOY_DIR && pip install -r requirements.txt"
+  only:
+    - main
