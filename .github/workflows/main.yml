@@ -36,4 +36,6 @@ jobs:
           cd $SERVER_DEPLOY_DIR
           pip install -r requirements.txt
           export AUTH_REDIRECT_URL="https://did-jy.duckdns.org/auth/callback"
-          uvicorn main:app --host 0.0.0.0 --port 8000 &
+          pkill -f "uvicorn main:app"
+          nohup uvicorn main:app --host 0.0.0.0 --port 8000 > nohup.out 2>&1 &
+          echo "FastAPI application started"
