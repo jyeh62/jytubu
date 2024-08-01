@@ -35,4 +35,5 @@ jobs:
         ssh -i ~/.ssh/deploy_key $SERVER_USER@$SERVER_IP << EOF
           cd $SERVER_DEPLOY_DIR
           pip install -r requirements.txt
-          systemctl restart your_fastapi_service
+          export AUTH_REDIRECT_URL="https://did-jy.duckdns.org/auth/callback"
+          uvicorn main:app --host 0.0.0.0 --port 8000
